@@ -1,0 +1,5 @@
+.env
+secretos_google.json
+venv/
+__pycache__/
+*.json
