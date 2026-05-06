@@ -90,8 +90,7 @@ HTML_FORM = """
         <div class="logo-container">
             <img src="/static/cata.jpeg" alt="Logo CATA">
         </div>
-        <h2>#</h2>
-        <h3>Reserva de Mentoría - Viernes 8 de Mayo</h3>
+        <h2>Reserva de Mentoría - Viernes 8 de Mayo</h2>
         
         <form id="formAgendar">
             <label for="equipo">Nombre del Equipo</label>
