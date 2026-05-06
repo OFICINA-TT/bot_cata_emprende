@@ -105,6 +105,7 @@ HTML_FORM = """
                 <option value="" disabled selected>Cargando disponibilidad...</option>
                 <option value="09:00">09:00 - 09:30 hrs</option>
                 <option value="09:30">09:30 - 10:00 hrs</option>
+                <option value="10:00">10:00 - 10:30 hrs</option>  
                 <option value="10:30">10:30 - 11:00 hrs</option>
                 <option value="11:00">11:00 - 11:30 hrs</option>
                 <option value="11:30">11:30 - 12:00 hrs</option>
