@@ -90,12 +90,12 @@ HTML_FORM = """
         <div class="logo-container">
             <img src="/static/cata.jpeg" alt="Logo CATA">
         </div>
-        <h2>Oficina TT CATA</h2>
-        <h3>Reserva de Pitch - Viernes 8 de Mayo</h3>
+        <h2>#</h2>
+        <h3>Reserva de Mentoría - Viernes 8 de Mayo</h3>
         
         <form id="formAgendar">
             <label for="equipo">Nombre del Equipo</label>
-            <input type="text" id="equipo" placeholder="Ej: Los Innovadores" required>
+            <input type="text" id="equipo" placeholder="Ej: Innovadores" required>
 
             <label for="email">Email de contacto</label>
             <input type="email" id="email" placeholder="correo@ejemplo.com" required>
