@@ -100,7 +100,7 @@ def enviar_correos_confirmacion(email_equipo, nombre_equipo, hora_inicio):
         "sender": {"name": "BOT CATA EMPRENDE", "email": EMAIL_BOT}, 
         "to": [{"email": email_equipo}],
         "subject": f"Confirmación Mentoría: {nombre_equipo}",
-        "htmlContent": html_base.replace("[TITULO]", "Confirmación de Pitch").replace("[MENSAJE]", "Tu bloque para CATA Emprende ha sido reservado exitosamente.")
+        "htmlContent": html_base.replace("[TITULO]", "Confirmación de Mentoría").replace("[MENSAJE]", "Tu bloque para CATA Emprende ha sido reservado exitosamente.")
     }
 
     # Envío B: A Kathy y Fer (Aviso Interno) - AMBOS EN UN SOLO MAIL
