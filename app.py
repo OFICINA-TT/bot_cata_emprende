@@ -207,10 +207,6 @@ HTML_FORM = """
                 <option value="10:30">10:30 - 11:00 hrs</option>
                 <option value="11:00">11:00 - 11:30 hrs</option>
                 <option value="11:30">11:30 - 12:00 hrs</option>
-                <option value="12:00">12:00 - 12:30 hrs</option>
-                <option value="12:30">12:30 - 13:00 hrs</option>
-                <option value="13:00">13:00 - 13:30 hrs</option>
-                <option value="13:30">13:30 - 14:00 hrs</option>
             </select>
 
             <button type="submit" id="btnEnviar" disabled>Agendar Bloque</button>
