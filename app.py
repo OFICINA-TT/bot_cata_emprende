@@ -22,10 +22,25 @@ SERVICE_ACCOUNT_FILE = 'secretos_google.json'
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 def obtener_servicio_google():
-    creds = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-    return build('calendar', 'v3', credentials=creds)
+    # 1. Intentamos primero con la variable de entorno (Para Render)
+    google_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+    
+    if google_json:
+        try:
+            # Si la variable existe, la transformamos de texto a JSON
+            info = json.loads(google_json)
+            creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
+            return build('calendar', 'v3', credentials=creds)
+        except Exception as e:
+            print(f"Error leyendo la variable GOOGLE_CREDENTIALS_JSON: {e}")
 
-service = obtener_servicio_google()
+    # 2. Si no hay variable, buscamos el archivo físico (Para tu Mac)
+    if os.path.exists(SERVICE_ACCOUNT_FILE):
+        creds = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+        return build('calendar', 'v3', credentials=creds)
+    
+    # 3. Si no hay ninguna de las dos, lanzamos el error
+    raise Exception("No se encontraron credenciales de Google (ni en Render ni en el archivo local).")
 
 # --- 2. GENERADOR DE LINK CALENDARIO ---
 def generar_link_google_calendar(nombre_equipo, hora_inicio_str):
