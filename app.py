@@ -1,5 +1,6 @@
 import os
 import json
+import requests
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template_string
 from google.oauth2 import service_account
@@ -28,13 +29,57 @@ def obtener_servicio_google():
 
 service = obtener_servicio_google()
 
-# --- LÓGICA DEL BOT ---
+# --- NUEVA LÓGICA DE CORREOS (BREVO) ---
+def enviar_correos_confirmacion(email_equipo, nombre_equipo, hora_inicio):
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "api-key": BREVO_API_KEY
+    }
+
+# 1. CORREO PARA EL EQUIPO
+    payload_equipo = {
+        "sender": {"name": "Bot - CATA EMPRENDE", "email": ID_CALENDARIO},
+        "to": [{"email": email_equipo}],
+        "subject": f"Confirmación de Pitch: {nombre_equipo}",
+        "htmlContent": f"""
+            <h3>¡Hola {nombre_equipo}!</h3>
+            <p>Tu sesión de pitch con Kathy ha sido agendada con éxito.</p>
+            <p><strong>Fecha:</strong> Viernes 8 de Mayo<br>
+               <strong>Hora:</strong> {hora_inicio} hrs</p>
+            <p>Prontamente recibirás el enlace de conexión. ¡Mucho éxito!</p>
+        """
+    }
+
+    # 2. CORREO PARA KATHY
+    payload_kathy = {
+        "sender": {"name": "Bot - CATA EMPRENDE", "email": ID_CALENDARIO},
+        "to": [{"email": ID_CALENDARIO}],
+        "subject": f"Nueva sesión agendada: {nombre_equipo}",
+        "htmlContent": f"""
+            <h3>Hola Kathy,</h3>
+            <p>Se ha agendado una nueva reunión en tu calendario.</p>
+            <p><strong>Equipo:</strong> {nombre_equipo}<br>
+               <strong>Hora:</strong> {hora_inicio} hrs</p>
+            <p><strong>Acción requerida:</strong> Por favor, envía el enlace de conexión al correo: {email_equipo}</p>
+        """
+    }
+
+    # Enviamos ambos correos a la API de Brevo
+# Enviamos ambos correos y guardamos la respuesta en res1 y res2
+    res1 = requests.post(url, json=payload_equipo, headers=headers)
+    res2 = requests.post(url, json=payload_kathy, headers=headers)
+
+    # Imprimimos la respuesta en la terminal para descubrir el problema
+    print("Respuesta Brevo Equipo:", res1.text)
+    print("Respuesta Brevo Kathy:", res2.text)
+
+# --- LÓGICA DEL CALENDARIO ---
 def crear_evento(nombre_equipo, email_equipo, hora_inicio_str):
     fecha_hoy = "2026-05-08" 
-    
     start_dt = datetime.strptime(f"{fecha_hoy} {hora_inicio_str}", "%Y-%m-%d %H:%M")
     end_dt = start_dt + timedelta(minutes=30)
-
     start_iso = start_dt.strftime("%Y-%m-%dT%H:%M:00-04:00")
     end_iso = end_dt.strftime("%Y-%m-%dT%H:%M:00-04:00")
 
@@ -64,19 +109,15 @@ HTML_FORM = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oficina TT CATA - Agendamiento</title>
     <style>
-        /* Restauramos el fondo grisáceo y el cuadrado con sombra */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        
         .logo-container { text-align: center; margin-bottom: 10px; }
         .logo-container img { max-width: 180px; height: auto; }
         h2 { color: #1a1a2e; text-align: center; margin-bottom: 5px; font-size: 22px; }
         h3 { color: #34495e; text-align: center; margin-top: 0; font-size: 16px; font-weight: normal; }
         label { display: block; margin-bottom: 5px; color: #4a4a4a; font-weight: bold; font-size: 14px; }
         input, select { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        
         option:disabled { color: #999999; background-color: #f2f2f2; font-style: italic; }
-
         button { width: 100%; padding: 12px; background-color: #2c3e50; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.3s; }
         button:hover { background-color: #1a252f; }
         button:disabled { background-color: #95a5a6; cursor: not-allowed; }
@@ -105,6 +146,7 @@ HTML_FORM = """
                 <option value="" disabled selected>Cargando disponibilidad...</option>
                 <option value="09:00">09:00 - 09:30 hrs</option>
                 <option value="09:30">09:30 - 10:00 hrs</option>
+                <option value="10:00">10:00 - 10:30 hrs</option>
                 <option value="10:30">10:30 - 11:00 hrs</option>
                 <option value="11:00">11:00 - 11:30 hrs</option>
                 <option value="11:30">11:30 - 12:00 hrs</option>
@@ -166,12 +208,14 @@ HTML_FORM = """
                 resDiv.style.display = "block";
                 if (result.status === "success") {
                     resDiv.className = "success";
-                    resDiv.innerHTML = `<strong>¡Bloque Reservado!</strong><br>El evento está en el calendario.`;
+                    resDiv.innerHTML = `<strong>¡Bloque Reservado!</strong><br>El evento está en el calendario y se han enviado los correos.`;
                     
                     const select = document.getElementById('hora');
                     const optionSeleccionada = select.querySelector(`option[value="${datos.hora}"]`);
-                    optionSeleccionada.disabled = true;
-                    optionSeleccionada.text += ' (Ocupado)';
+                    if (optionSeleccionada) {
+                        optionSeleccionada.disabled = true;
+                        optionSeleccionada.text += ' (Ocupado)';
+                    }
                     select.value = ""; 
                     
                     document.getElementById('equipo').value = "";
@@ -226,6 +270,8 @@ def agendar():
     datos = request.json
     try:
         link = crear_evento(datos['equipo'], datos['email'], datos['hora'])
+        # AQUI ES DONDE DISPARAMOS EL CORREO
+        enviar_correos_confirmacion(datos['email'], datos['equipo'], datos['hora'])
         return jsonify({"status": "success", "link": link}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
