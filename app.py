@@ -13,7 +13,7 @@ app = Flask("bot-cata-emprende")
 
 # --- 1. CONFIGURACIÓN DESDE TU .ENV ---
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
-EMAIL_BOT = os.getenv("EMAIL_BOT")
+EMAIL_BOT = os.getenv("EMAIL_BOT", "fm982020@gmail.com")
 EMAIL_KATHY = os.getenv("EMAIL_KATHY")
 EMAIL_OBSERVADOR = os.getenv("EMAIL_OBSERVADOR") # Correo de Fer
 LINK_REUNION = os.getenv("LINK_REUNION", "https://asu.zoom.us/j/4172877924")
