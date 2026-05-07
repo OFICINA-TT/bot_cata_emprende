@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import urllib.parse
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template_string
 from google.oauth2 import service_account
@@ -30,7 +31,23 @@ def obtener_servicio_google():
 service = obtener_servicio_google()
 
 # --- NUEVA LÓGICA DE CORREOS (BREVO) ---
+# --- NUEVA LÓGICA DE CORREOS (BREVO) ---
+
+def generar_link_google_calendar(nombre_equipo, hora_inicio_str):
+    fecha = "20260508" # Formato YYYYMMDD
+    h_inicio = hora_inicio_str.replace(":", "") + "00"
+    h_fin_int = int(h_inicio) + 3000
+    h_fin = str(h_fin_int).zfill(6)
+
+    titulo = urllib.parse.quote(f"Pitch: {nombre_equipo}")
+    detalles = urllib.parse.quote("Sesión final de Mentorías del concurso cata emprende 2026 | Oficina TT CATA. Katherine hará envío del enlace de conexión pronto.")
+
+    link = f"https://www.google.com/calendar/render?action=TEMPLATE&text={titulo}&dates={fecha}T{h_inicio}/{fecha}T{h_fin}&details={detalles}&ctz=America/Santiago"
+    return link
+
 def enviar_correos_confirmacion(email_equipo, nombre_equipo, hora_inicio):
+    link_calendar = generar_link_google_calendar(nombre_equipo, hora_inicio)
+    
     url = "https://api.brevo.com/v3/smtp/email"
     headers = {
         "accept": "application/json",
@@ -38,17 +55,23 @@ def enviar_correos_confirmacion(email_equipo, nombre_equipo, hora_inicio):
         "api-key": BREVO_API_KEY
     }
 
-# 1. CORREO PARA EL EQUIPO
+    # 1. CORREO PARA EL EQUIPO (CON BOTÓN)
     payload_equipo = {
         "sender": {"name": "Bot - CATA EMPRENDE", "email": ID_CALENDARIO},
         "to": [{"email": email_equipo}],
-        "subject": f"Confirmación de Pitch: {nombre_equipo}",
+        "subject": f"Confirmación de Mentoría: {nombre_equipo}",
         "htmlContent": f"""
-            <h3>¡Hola {nombre_equipo}!</h3>
-            <p>Tu sesión de pitch con Kathy ha sido agendada con éxito.</p>
-            <p><strong>Fecha:</strong> Viernes 8 de Mayo<br>
-               <strong>Hora:</strong> {hora_inicio} hrs</p>
-            <p>Prontamente recibirás el enlace de conexión. ¡Mucho éxito!</p>
+            <div style="font-family: Arial, sans-serif; color: #333;">
+                <h3>¡Hola {nombre_equipo}!</h3>
+                <p>El bloque final de tu mentoría con Kathy ha sido agendada con éxito.</p>
+                <p><strong>Fecha:</strong> Viernes 8 de Mayo<br>
+                   <strong>Hora:</strong> {hora_inicio} hrs</p>
+                <p>Puedes añadirlo a tu calendario haciendo clic aquí:</p>
+                <a href="{link_calendar}" style="background-color: #4285F4; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                    📅 Añadir a mi Google Calendar
+                </a>
+                <p style="margin-top: 20px;">Prontamente recibirás el enlace de conexión por correo. ¡Mucho éxito!</p>
+            </div>
         """
     }
 
@@ -59,12 +82,15 @@ def enviar_correos_confirmacion(email_equipo, nombre_equipo, hora_inicio):
         "subject": f"Nueva sesión agendada: {nombre_equipo}",
         "htmlContent": f"""
             <h3>Hola Kathy,</h3>
-            <p>Se ha agendado una nueva reunión en tu calendario.</p>
+            <p>Se ha agendado una <strong>nueva reunión</strong> para el bloque final de mentorías <strong>CATA EMPRENDE 2026</strong>, puedes visualizarlo en tu calendario.</p>
             <p><strong>Equipo:</strong> {nombre_equipo}<br>
                <strong>Hora:</strong> {hora_inicio} hrs</p>
-            <p><strong>Acción requerida:</strong> Por favor, envía el enlace de conexión al correo: {email_equipo}</p>
+            <p><strong>Acción requerida:</strong> Por favor, se solicita enviar el enlace de conexión al correo: {email_equipo}.</p>
         """
     }
+
+    requests.post(url, json=payload_equipo, headers=headers)
+    requests.post(url, json=payload_kathy, headers=headers)
 
     # Enviamos ambos correos a la API de Brevo
 # Enviamos ambos correos y guardamos la respuesta en res1 y res2
@@ -83,6 +109,7 @@ def crear_evento(nombre_equipo, email_equipo, hora_inicio_str):
     start_iso = start_dt.strftime("%Y-%m-%dT%H:%M:00-04:00")
     end_iso = end_dt.strftime("%Y-%m-%dT%H:%M:00-04:00")
 
+    # 1. Verificar disponibilidad
     eventos_existentes = service.events().list(
         calendarId=ID_CALENDARIO, timeMin=start_iso, timeMax=end_iso, singleEvents=True
     ).execute()
@@ -90,14 +117,21 @@ def crear_evento(nombre_equipo, email_equipo, hora_inicio_str):
     if eventos_existentes.get('items', []):
         raise Exception("Este bloque horario ya fue reservado.")
 
+    # 2. CONFIGURACIÓN DEL EVENTO (SIN ATTENDEES PARA EVITAR ERROR 403)
     evento_body = {
         'summary': f'Pitch: {nombre_equipo}',
-        'description': f'Agendamiento automático. Contacto: {email_equipo}',
+        'location': 'Enlace de conexión por definir',
+        'description': f'Sesión de agendamiento automático. Equipo: {nombre_equipo}.',
         'start': {'dateTime': start_iso, 'timeZone': 'America/Santiago'},
         'end': {'dateTime': end_iso, 'timeZone': 'America/Santiago'}
     }
 
-    evento_creado = service.events().insert(calendarId=ID_CALENDARIO, body=evento_body).execute()
+    # 3. INSERTAR (Quitamos sendUpdates='all' porque ya no hay invitados externos)
+    evento_creado = service.events().insert(
+        calendarId=ID_CALENDARIO, 
+        body=evento_body
+    ).execute()
+    
     return evento_creado.get('htmlLink')
 
 # --- DISEÑO DEL FORMULARIO ---
@@ -131,12 +165,12 @@ HTML_FORM = """
         <div class="logo-container">
             <img src="/static/cata.jpeg" alt="Logo CATA">
         </div>
-        <h2>Oficina TT CATA</h2>
-        <h3>Reserva de Pitch - Viernes 8 de Mayo</h3>
+        <h2>Reserva de Mentoría</h2>
+        <h3>Viernes 8 de Mayo</h3>
         
         <form id="formAgendar">
             <label for="equipo">Nombre del Equipo</label>
-            <input type="text" id="equipo" placeholder="Ej: Los Innovadores" required>
+            <input type="text" id="equipo" placeholder="Ej: Innovadores" required>
 
             <label for="email">Email de contacto</label>
             <input type="email" id="email" placeholder="correo@ejemplo.com" required>
@@ -152,7 +186,7 @@ HTML_FORM = """
                 <option value="11:30">11:30 - 12:00 hrs</option>
             </select>
 
-            <button type="submit" id="btnEnviar" disabled>Agendar ahora</button>
+            <button type="submit" id="btnEnviar" disabled>Agendar Bloque</button>
         </form>
 
         <div id="resultado"></div>
@@ -208,7 +242,7 @@ HTML_FORM = """
                 resDiv.style.display = "block";
                 if (result.status === "success") {
                     resDiv.className = "success";
-                    resDiv.innerHTML = `<strong>¡Bloque Reservado!</strong><br>El evento está en el calendario y se han enviado los correos.`;
+                    resDiv.innerHTML = `<strong>¡Bloque Reservado!</strong><br>Verifica tu correo y agrega al calendario. Pronto recibirás el enlace de conexión.`;
                     
                     const select = document.getElementById('hora');
                     const optionSeleccionada = select.querySelector(`option[value="${datos.hora}"]`);
