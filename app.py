@@ -131,8 +131,8 @@ HTML_FORM = """
         <div class="logo-container">
             <img src="/static/cata.jpeg" alt="Logo CATA">
         </div>
-        <h2>Oficina TT CATA</h2>
-        <h3>Reserva de Pitch - Viernes 8 de Mayo</h3>
+        <h2>Reserva de Mentoría</h2>
+        <h3>Viernes 8 de Mayo</h3>
         
         <form id="formAgendar">
             <label for="equipo">Nombre del Equipo</label>
