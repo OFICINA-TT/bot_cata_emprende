@@ -75,12 +75,14 @@ def enviar_correos_confirmacion(email_equipo, nombre_equipo, hora_inicio):
 
     link_manual = generar_link_google_calendar(nombre_equipo, hora_inicio)
 
-    # Base HTML genérica
+    # 1. DISEÑAMOS EL CONTENIDO (HTML)
     html_base = f"""
         <div style="font-family: Arial, sans-serif; color: #333; padding: 25px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">
             <h2 style="color: #1a252f;">[TITULO] 🚀</h2>
             <p>[MENSAJE]</p>
+            <hr>
             <p><strong>Equipo:</strong> {nombre_equipo}</p>
+            <p><strong>Contacto:</strong> {email_equipo}</p>
             <p><strong>Horario:</strong> Viernes 8 de Mayo, {hora_inicio} hrs.</p>
             <p><strong>Enlace de Zoom:</strong> <a href="{LINK_REUNION}">{LINK_REUNION}</a></p>
             <div style="margin-top: 25px; text-align: center;">
@@ -88,51 +90,38 @@ def enviar_correos_confirmacion(email_equipo, nombre_equipo, hora_inicio):
                     📅 Ver en mi Calendario
                 </a>
             </div>
-            <p style="font-size: 11px; color: #7f8c8d; margin-top: 25px; border-top: 1px solid #eee; padding-top: 10px;">
-                Oficina de Transferencia Tecnológica - CATA
-            </p>
         </div>
     """
 
-    # Generar correos específicos usando la base
-    html_equipo = html_base.replace("[TITULO]", "Confirmación de Mentoría").replace("[MENSAJE]", "Se ha confirmado un bloque de mentoría para el concurso CATA Emprende 2026.")
-    html_kathy = html_base.replace("[TITULO]", "Nueva Mentoría (Kathy)").replace("[MENSAJE]", f"Hola Kathy, tienes una nueva reunión agendada. Contacto del equipo: {email_equipo}")
-    html_fer = html_base.replace("[TITULO]", "Log de Registro (Fer)").replace("[MENSAJE]", f"Hola Fer, este es un aviso automático de registro exitoso. Participante: {email_equipo}")
+    # 2. PREPARAMOS LOS DOS ENVÍOS
 
-    # 1. Enviar al Participante
+    # Envío A: Al Equipo (Confirmación)
     payload_equipo = {
         "sender": {"name": "BOT CATA EMPRENDE", "email": EMAIL_BOT}, 
         "to": [{"email": email_equipo}],
-        "subject": f"Confirmación de Mentoría Final: {nombre_equipo}",
-        "htmlContent": html_equipo
+        "subject": f"Confirmación Mentoría: {nombre_equipo}",
+        "htmlContent": html_base.replace("[TITULO]", "Confirmación de Pitch").replace("[MENSAJE]", "Tu bloque para CATA Emprende ha sido reservado exitosamente.")
     }
 
-    # 2. Enviar a Katherine
-    payload_kathy = {
+    # Envío B: A Kathy y Fer (Aviso Interno) - AMBOS EN UN SOLO MAIL
+    payload_staff = {
         "sender": {"name": "BOT CATA EMPRENDE", "email": EMAIL_BOT},
-        "to": [{"email": EMAIL_KATHY}],
-        "subject": f"NUEVO AGENDAMIENTO: {nombre_equipo}",
-        "htmlContent": html_kathy
+        "to": [
+            {"email": EMAIL_KATHY},
+            {"email": EMAIL_OBSERVADOR}
+        ],
+        "subject": f"NUEVO REGISTRO: {nombre_equipo}",
+        "htmlContent": html_base.replace("[TITULO]", "Aviso de Coordinación").replace("[MENSAJE]", "Se ha registrado un nuevo equipo en el sistema.")
     }
 
-    # 3. Enviar a ti (Fer - Observadora)
-    payload_obs = {
-        "sender": {"name": "BOT CATA EMPRENDE", "email": EMAIL_BOT},
-        "to": [{"email": EMAIL_OBSERVADOR}],
-        "subject": f"Log Coordinación: {nombre_equipo} agendó Mentoría",
-        "htmlContent": html_fer
-    }
-
-    # Ejecutamos y verificamos en consola
-    res_equipo = requests.post(url, json=payload_equipo, headers=headers)
-    res_kathy = requests.post(url, json=payload_kathy, headers=headers)
-    res_obs = requests.post(url, json=payload_obs, headers=headers)
+    # 3. EJECUTAMOS LOS ENVÍOS
+    res1 = requests.post(url, json=payload_equipo, headers=headers)
+    res2 = requests.post(url, json=payload_staff, headers=headers)
     
     print(f"--- Reporte de Envíos ---")
-    print(f"Equipo ({email_equipo}): {res_equipo.status_code}")
-    print(f"Kathy ({EMAIL_KATHY}): {res_kathy.status_code}")
-    print(f"Fer ({EMAIL_OBSERVADOR}): {res_obs.status_code}")
-
+    print(f"Envío a Equipo: {res1.status_code}")
+    print(f"Envío a Staff (Kathy/Fer): {res2.status_code}")
+    
 # --- 4. LÓGICA DE GOOGLE CALENDAR ---
 def crear_evento(nombre_equipo, email_equipo, hora_inicio_str):
     fecha_hoy = "2026-05-08" 
