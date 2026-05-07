@@ -16,7 +16,7 @@ BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 EMAIL_BOT = os.getenv("EMAIL_BOT")
 EMAIL_KATHY = os.getenv("EMAIL_KATHY")
 EMAIL_OBSERVADOR = os.getenv("EMAIL_OBSERVADOR") # Correo de Fer
-LINK_REUNION = os.getenv("LINK_REUNION")
+LINK_REUNION = os.getenv("LINK_REUNION", "https://asu.zoom.us/j/4172877924")
 SERVICE_ACCOUNT_FILE = 'secretos_google.json'
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -41,6 +41,8 @@ def obtener_servicio_google():
     
     # 3. Si no hay ninguna de las dos, lanzamos el error
     raise Exception("No se encontraron credenciales de Google (ni en Render ni en el archivo local).")
+
+service = obtener_servicio_google()
 
 # --- 2. GENERADOR DE LINK CALENDARIO ---
 def generar_link_google_calendar(nombre_equipo, hora_inicio_str):
@@ -175,6 +177,8 @@ HTML_FORM = """
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        .logo-container { text-align: center; margin-bottom: 10px; }
+        .logo-container img { max-width: 180px; height: auto; }
         h2 { color: #1a1a2e; text-align: center; margin-bottom: 5px; font-size: 22px; }
         h3 { color: #34495e; text-align: center; margin-top: 0; font-size: 16px; font-weight: normal; }
         label { display: block; margin-bottom: 5px; color: #4a4a4a; font-weight: bold; font-size: 14px; }
@@ -190,6 +194,11 @@ HTML_FORM = """
 </head>
 <body>
     <div class="container">
+        
+        <div class="logo-container">
+            <img src="/static/cata.jpeg" alt="Logo CATA">
+        </div>
+
         <h2>Reserva de Pitch</h2>
         <h3>Viernes 8 de Mayo</h3>
         
