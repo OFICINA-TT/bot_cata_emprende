@@ -3,3 +3,4 @@ secretos_google.json
 venv/
 __pycache__/
 *.json
+.DS_Store
