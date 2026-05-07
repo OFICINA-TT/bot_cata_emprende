@@ -188,7 +188,7 @@ HTML_FORM = """
             <img src="/static/cata.jpeg" alt="Logo CATA">
         </div>
 
-        <h2>Reserva de Pitch</h2>
+        <h2>Reserva de Mentoria</h2>
         <h3>Viernes 8 de Mayo</h3>
         
         <form id="formAgendar">
