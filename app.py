@@ -103,24 +103,21 @@ def enviar_correos_confirmacion(email_equipo, nombre_equipo, hora_inicio):
         "htmlContent": html_base.replace("[TITULO]", "Confirmación de Pitch").replace("[MENSAJE]", "Tu bloque para CATA Emprende ha sido reservado exitosamente.")
     }
 
-    # Envío B: A Kathy y Fer (Aviso Interno) - AMBOS EN UN SOLO MAIL
-    payload_staff = {
+    # Envío B: Solo a ti (Fer - Observadora)
+    payload_obs = {
         "sender": {"name": "BOT CATA EMPRENDE", "email": EMAIL_BOT},
-        "to": [
-            {"email": EMAIL_KATHY},
-            {"email": EMAIL_OBSERVADOR}
-        ],
+        "to": [{"email": EMAIL_OBSERVADOR}],
         "subject": f"NUEVO REGISTRO: {nombre_equipo}",
         "htmlContent": html_base.replace("[TITULO]", "Aviso de Coordinación").replace("[MENSAJE]", "Se ha registrado un nuevo equipo en el sistema.")
     }
 
     # 3. EJECUTAMOS LOS ENVÍOS
     res1 = requests.post(url, json=payload_equipo, headers=headers)
-    res2 = requests.post(url, json=payload_staff, headers=headers)
+    res2 = requests.post(url, json=payload_obs, headers=headers)
     
     print(f"--- Reporte de Envíos ---")
     print(f"Envío a Equipo: {res1.status_code}")
-    print(f"Envío a Staff (Kathy/Fer): {res2.status_code}")
+    print(f"Envío a Fer (Observadora): {res2.status_code}")
     
 # --- 4. LÓGICA DE GOOGLE CALENDAR ---
 def crear_evento(nombre_equipo, email_equipo, hora_inicio_str):
